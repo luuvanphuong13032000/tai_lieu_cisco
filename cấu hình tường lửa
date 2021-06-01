@@ -1,0 +1,83 @@
+Cấu hình cisco
+
+
+
+-- cấu hình tường lửa:5506
+
+vào mode config:
+
+       
+       : enable-- vào mode #
+       :configure terminal --- vào mode config
+       : interface g1/1:  --cổng đầu thường gắn vào OUTSIDE: mạng ra internet
+       :nameif OUTSIDE    -- đặt tên cho cổng
+       :security-lever 0  --- đặt mức an ninh: thường OUTSIDE mức an ninh bằng 0; INSIDE là 100; 
+                                                                              DMZ là 50
+                                                                              
+       
+       :ip address 192.168.4.1 255.255.255.0    -- gán địa chỉ ip 
+       :no shutdown :----  bật nó lên               -- có thể viết tắt là no shut 
+       
+       
+      : interface g1/2
+      :nameif INSIDE
+      :security-level 100
+      :ip address 192.168.2.1 255.255.255.0 
+      :no shut
+      :interface g1/3
+      :nameif DMZ
+      :security-level 50
+      :ip address 192.168.3.1 255.255.255.0
+      
+      :route OUTSIDE 0.0.0.0 0.0.0.0 192.168.4.2 --- địa chỉ mạng nào không biết thì cứ hỏi 192.168.4.2    -- địa chỉ cổng nối với g1/1 
+      
+      : access-list <tên> extended permit icmp host 192.168.1.5 host 192.168.2.5 echo-reply
+      
+      *chú ý: 192.168.1.5 là địa chỉ phản hồi lại còn 192.168.2.5 là địa chỉ đang chờ để phản hồi
+      : access-group <ten> in int OUTSIDE
+   ** chú ý: là cài đặt trên cổng OUTSIDE theo chiều in:   -- có 2 chiều in/out trong đó in là đi vào còn out là đi ra trong tường lửa
+   
+   
+   -- viết access-list: để truy cập ssh từ máy chủ PC  có địa chỉ ip là 192.168.1.5 vào switch qua tường lửa:
+   
+   
+   -- access-list ssh entended permit tcp host 192.168.1.5<đây là địa chỉ trên PC > host 192.168.2.5 <đây là địa chỉ trên switch> eq 22< cổng ssh> 
+   
+   -- access-list ssh extended permit tcp 192.168.1.0 255.255.255.0 <dải mạng bên PC> host 192.168.3.10<địa chỉ trên DMZ> 
+   -- access-group ssh in interface OUTSIDE  : cài đặt ssh trên cổng outside theo chiều in 
+   
+   
+   
+   
+   
+   -- cấu hình ssh trên switch:
+   
+   : ip domain-name epu.vn   : cấu hình tên miển
+   : username phuong privilege 15 secret phuong   -- tạo username là phương và mật khẩu là phuong
+   :crypto key generate rsa 
+   : nhập 1024
+   :line vty 0 15
+   :login local
+   :transport input ssh
+   :exit
+   : ip ssh ver 2
+   :int vlan 1
+   : ip address 192.168.2.5 255.255.255.0
+   
+   : no shut 
+   : exit  -- về mode 
+   : interface Fa0/1
+   :switchport mode access
+   : switchport access vlan 1
+   : ip defaul-gateway 192.168.2.1
+   :end 
+   
+   
+   
+   
+      
+      
+      
+      
+      
+                                                                               
